@@ -1,5 +1,5 @@
 from spectral_cube import SpectralCube
-from astropy.units import u
+import astropy.units as u
 from radio_beam import Beam
 from scipy.ndimage.interpolation import map_coordinates
 import numpy as np
@@ -7,7 +7,8 @@ import numpy as np
 defaultBeam = Beam(major=15 * u.arcsec, minor=15 * u.arcsec)
 
 
-def SampleWithConvolution(file, positions, beam=defaultBeam):
+def SampleWithConvolution(file, positions, beam=defaultBeam,
+                          order=1, **kwargs):
     s = SpectralCube.read(file)
     spaxis = s.spectral_axis.value
     spaxis.shape += (1,)
@@ -15,7 +16,9 @@ def SampleWithConvolution(file, positions, beam=defaultBeam):
     s2 = s.convolve_to(beam)
     ravals = spaxis_ones * positions.ra.value
     decvals = spaxis_ones * positions.dec.value
-    vvals = spaxis_ones * np.onesLike(positions.ra.value)
+    vvals = spaxis * np.ones_like(positions.ra.value)
     x, y, v = s.wcs.all_world2pix(ravals, decvals, vvals, 0)
-    output = map_coordinates(s2.filled_data[:], [v, y, x])
+    output = map_coordinates(s2.filled_data[:], [v, y, x],
+                             order=order, **kwargs)
+    # import pdb; pdb.set_trace()
     return output
